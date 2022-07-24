@@ -5,7 +5,6 @@
 #include "common/d3d12/util.h"
 #include "common/log.h"
 #include "common/string_util.h"
-#include "core/host_interface.h"
 #include "core/settings.h"
 #include "display_ps.hlsl.h"
 #include "display_vs.hlsl.h"
@@ -256,15 +255,19 @@ bool D3D12HostDisplay::CreateRenderDevice(const WindowInfo& wi, std::string_view
   }
 
   m_window_info = wi;
+
+  if (m_window_info.type != WindowInfo::Type::Surfaceless && !CreateSwapChain(nullptr))
+  {
+    m_window_info = {};
+    return false;
+  }
+
   return true;
 }
 
 bool D3D12HostDisplay::InitializeRenderDevice(std::string_view shader_cache_directory, bool debug_device,
                                               bool threaded_presentation)
 {
-  if (m_window_info.type != WindowInfo::Type::Surfaceless && !CreateSwapChain(nullptr))
-    return false;
-
   if (!CreateResources())
     return false;
 
@@ -632,8 +635,7 @@ bool D3D12HostDisplay::CreateImGuiContext()
   ImGui::GetIO().DisplaySize.x = static_cast<float>(m_window_info.surface_width);
   ImGui::GetIO().DisplaySize.y = static_cast<float>(m_window_info.surface_height);
 
-  return ImGui_ImplDX12_Init(g_d3d12_context->GetDevice(), D3D12::Context::NUM_COMMAND_LISTS,
-                             DXGI_FORMAT_R8G8B8A8_UNORM);
+  return ImGui_ImplDX12_Init(DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
 void D3D12HostDisplay::DestroyImGuiContext()
@@ -729,7 +731,7 @@ bool D3D12HostDisplay::RenderScreenshot(u32 width, u32 height, std::vector<u32>*
 void D3D12HostDisplay::RenderImGui(ID3D12GraphicsCommandList* cmdlist)
 {
   ImGui::Render();
-  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmdlist);
+  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData());
 }
 
 void D3D12HostDisplay::RenderDisplay(ID3D12GraphicsCommandList* cmdlist)

@@ -1,10 +1,12 @@
 #pragma once
-#include "common/cd_image.h"
+#include "util/cd_image.h"
 #include "types.h"
 #include <array>
 #include <atomic>
 #include <condition_variable>
 #include <thread>
+
+class ProgressCallback;
 
 class CDROMAsyncReader
 {
@@ -39,6 +41,9 @@ public:
 
   void SetMedia(std::unique_ptr<CDImage> media);
   std::unique_ptr<CDImage> RemoveMedia();
+
+  /// Precaches image, either to memory, or using the underlying image precache.
+  bool Precache(ProgressCallback* callback);
 
   void QueueReadSector(CDImage::LBA lba);
 
